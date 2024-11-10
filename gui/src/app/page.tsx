@@ -24,6 +24,24 @@ import {
 } from './commands';
 import { Modal } from "./Modal";
 
+
+// Helper functions to extend prototypes
+ArrayBuffer.prototype.tohex = function () {
+    return [...new Uint8Array(this)]
+        .map(x => x.toString(16).padStart(2, '0'))
+        .join('');
+};
+Uint8Array.prototype.tohex = function () {
+    return [...new Uint8Array(this)]
+        .map(x => x.toString(16).padStart(2, '0'))
+        .join('');
+};
+String.prototype.toUint8Array = function () {
+    if (!this) return new Uint8Array();
+    return Uint8Array.from(this.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []);
+};
+
+
 export interface Command {
     forward: boolean;
     backward: boolean;
@@ -159,6 +177,34 @@ export default function Home() {
         sendMessage();
     }, [command]);
 
+    /* useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, error => {
+                    console.log('ServiceWorker registration failed: ', error);
+                });
+            });
+        }
+    }, []); */
+
+    useEffect(() => {
+        const preloadImages = () => {
+            const images = [
+                '/background_bmw.png',
+                '/background_ferrari.png'
+            ];
+            images.forEach((image) => {
+                const img = document.createElement('img');
+                img.src = image;
+                document.body.appendChild(img);
+                document.body.removeChild(img);
+            });
+        };
+        document.addEventListener('DOMContentLoaded', preloadImages);
+    }, []);
+
     const calculateMove = () => {
         if (isIdle(command)) return IDLE_COMMAND;
 
@@ -205,43 +251,27 @@ export default function Home() {
     }, [connected]);
 
     const handleKeyDown = (event: KeyboardEvent) => {
-        switch (event.key) {
-            case "ArrowUp":
-                setCommand(prevCommand => ({ ...prevCommand, forward: true }));
-                break;
-            case "ArrowDown":
-                setCommand(prevCommand => ({ ...prevCommand, backward: true }));
-                break;
-            case "ArrowLeft":
-                setCommand(prevCommand => ({ ...prevCommand, left: true }));
-                break;
-            case "ArrowRight":
-                setCommand(prevCommand => ({ ...prevCommand, right: true }));
-                break;
-            case "Shift":
-                setCommand(prevCommand => ({ ...prevCommand, turbo: true }));
-                break;
-        }
+        const newcommand = {
+            forward: event.key === "ArrowUp",
+            backward: event.key === "ArrowDown",
+            left: event.key === "ArrowLeft",
+            right: event.key === "ArrowRight",
+            turbo: event.key === "Shift",
+            duration: 1,
+        };
+        setCommand(newcommand);
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-        switch (event.key) {
-            case "ArrowUp":
-                setCommand(prevCommand => ({ ...prevCommand, forward: false }));
-                break;
-            case "ArrowDown":
-                setCommand(prevCommand => ({ ...prevCommand, backward: false }));
-                break;
-            case "ArrowLeft":
-                setCommand(prevCommand => ({ ...prevCommand, left: false }));
-                break;
-            case "ArrowRight":
-                setCommand(prevCommand => ({ ...prevCommand, right: false }));
-                break;
-            case "Shift":
-                setCommand(prevCommand => ({ ...prevCommand, turbo: false }));
-                break;
-        }
+        const newcommand = {
+            forward: event.key === "ArrowUp",
+            backward: event.key === "ArrowDown",
+            left: event.key === "ArrowLeft",
+            right: event.key === "ArrowRight",
+            turbo: event.key === "Shift",
+            duration: 1,
+        };
+        setCommand(newcommand);
     };
 
     const addCommand = () => {
@@ -317,6 +347,7 @@ export default function Home() {
             const gamepads = navigator.getGamepads();
             if (isSendingMessage) return;
             if (gamepads[0]) {
+                console.log(gamepads[0]);
                 const gp = gamepads[0];
                 
                 if (!gp.buttons) return;
@@ -349,11 +380,11 @@ export default function Home() {
 
     return (
         <div className="w-screen h-screen flex flex-col justify-center items-center bg-cover bg-center" style={{ backgroundImage: `url(background_${carType}.png)` }}>
-            <div className="w-screen h-screen p-4">
+            <div className="w-screen h-screen p-4 pt-36">
                 <div className="w-screen flex flex-row justify-between items-center px-10">
                     <div className="w-screen flex flex-col justify-between items-center">
                         <h1 className="text-2xl font-bold mb-4 text-white">{carType === 'bmw' ? 'BMW M Hybrid V8' : 'FERRARI F1-75'}</h1>
-                        <h2 className="text-1xl font-bold mb-4 text-white">Shell Car Controller - {connected ? 'Connected' : 'Disconnected'}</h2>
+                        <h2 className="text-1xl font-bold mb-4 text-white">Shell Car Controller - {connected ? '✅ Connected' : '🔴 Disconnected'}</h2>
                         {connected && batteryLevel !== null && (
                             <div className="text-white">
                                 Battery Level: <span ref={batteryEl}>{batteryLevel}%</span>
@@ -364,7 +395,12 @@ export default function Home() {
                 {/* <ThreeJSViewer carType={carType} /> */}
             </div>
 
-            <div className="absolute bottom-0 p-4 justify-between w-screen flex flex-row items-center space-x-4 mb-2">
+            <div className="
+                w-1/2
+                absolute bottom-0 p-4 
+                justify-between 
+                flex flex-row items-center space-x-4 mb-16"
+            >
                 <button onClick={connectButton} className="hover:bg-blue-400 bg-blue-500 text-white px-4 py-2 rounded">Connect</button>
                 { connected && (
                     <div className="flex space-x-4">

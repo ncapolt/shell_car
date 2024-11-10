@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "Shell Car",
   description: "Shell Car",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
