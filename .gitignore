@@ -1,4 +1,5 @@
-shell-rc
-/shell-rc
-./shell-rc
+shell-rc-repo
+/shell-rc-repo
+./shell-rc-repo
 __pycache__
+/backend/venv

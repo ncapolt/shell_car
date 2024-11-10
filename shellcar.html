@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bluetooth RC Remote</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" integrity="sha512-a+SUDuwNzXDvz4XrIcXHuCf089/iJAoN4lmrXJg18XnduKK6YlDHNRalv4yd1N40OKI80tFidF+rqTFKGPoWFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    </head>
+    <body>
+        <button id="connect_device" onclick="connectButton()">Connect to device</button>
+        <div>
+            <input type="checkbox" id="turbo_mode"> Turbo
+        </div>
+        <div>
+            <input type="checkbox" id="light_mode"> Lights
+        </div>
+        <div>
+            Battery: <span id="battery_status">0</span>%
+        </div>
+        <script>
+            var bluetooth = null;
+
+            const CONTROL_SERVICE_UUID = '0000fff0-0000-1000-8000-00805f9b34fb'
+            // const BATTERY_SERVICE_UUID = '0000180f-0000-1000-8000-00805f9b34fb'
+            const BATTERY_SERVICE_UUID = 'd44bc439-abfd-45a2-b575-925416129601'
+            const CONTROL_CHARACTERISTICS_UUID = 'd44bc439-abfd-45a2-b575-925416129600'
+            const BATTERY_CHARACTERISTICS_UUID = 'd44bc439-abfd-45a2-b575-925416129601'
+
+            const DECRYPT_KEY = "34522a5b7a6e492c08090a9d8d2a23f8";
+
+            let bt_up = false;
+            let bt_down = false;
+            let bt_left = false;
+            let bt_right = false;
+
+            let lastIdleStateSend = false;
+
+            const turboEl = document.getElementById('turbo_mode')
+            const lightEl = document.getElementById('light_mode')
+            const batteryEl = document.getElementById('battery_status')
+
+            function connectButton()
+            {
+                requestDevice();
+        }
+
+            async function requestDevice() {
+                console.log('Requesting any Bluetooth Device...');
+            var device = await navigator.bluetooth.requestDevice({
+                filters: [
+            {namePrefix: "QCAR-" },
+            ],
+            // acceptAllDevices: true,
+            optionalServices: [
+            CONTROL_SERVICE_UUID,
+            BATTERY_SERVICE_UUID,
+            CONTROL_CHARACTERISTICS_UUID,
+            BATTERY_CHARACTERISTICS_UUID,
+            ]
+            });
+            await connectDevice(device);
+            console.log("Device connected");
+        }
+
+            async function onDisconnected() {
+                console.log('> Bluetooth Device disconnected');
+            bluetooth = null;
+        }
+
+            function decryptAES(cipherText) {
+            const encryptedHex = CryptoJS.enc.Hex.parse(cipherText.tohex());
+            const keyHex = CryptoJS.enc.Hex.parse(DECRYPT_KEY);
+
+            const decrypted = CryptoJS.AES.decrypt({ciphertext: encryptedHex }, keyHex, {
+                mode: CryptoJS.mode.ECB,
+            padding: CryptoJS.pad.NoPadding
+            });
+
+            return decrypted.toString().toUint8Array();
+        }
+
+            function encryptAES(cipherText) {
+            const valueHex = CryptoJS.enc.Hex.parse(cipherText.tohex());
+            const keyHex = CryptoJS.enc.Hex.parse(DECRYPT_KEY);
+            const encrypted = CryptoJS.AES.encrypt(valueHex, keyHex, {
+                mode: CryptoJS.mode.ECB,
+            padding: CryptoJS.pad.NoPadding
+            });
+            return encrypted.ciphertext.toString().toUint8Array();
+        }
+
+            async function sendMessage() {
+            const cmd = calculateMove();
+            const encryptCmd = encryptAES(cmd);
+            var service = await bluetooth.getPrimaryService(CONTROL_SERVICE_UUID);
+            var characteristic = await service.getCharacteristic(CONTROL_CHARACTERISTICS_UUID);
+            await characteristic.writeValue(encryptCmd);
+        }
+
+
+            async function connectDevice(device) {
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+            bluetooth = await device.gatt.connect();
+            return new Promise(async (resolve) => {
+                const BatteryService = await bluetooth.getPrimaryService(BATTERY_SERVICE_UUID);
+            const BatteryCharacteristic = await BatteryService.getCharacteristic(BATTERY_CHARACTERISTICS_UUID);
+            await BatteryCharacteristic.startNotifications();
+            BatteryCharacteristic.addEventListener('characteristicvaluechanged', handleNotificationsBattary);
+            });
+        }
+
+            function isIdle() {
+            return !(bt_up || bt_down || bt_right || bt_left);
+        }
+
+            ArrayBuffer.prototype.tohex = function () {
+            return [...new Uint8Array(this)]
+                .map(x => x.toString(16).padStart(2, '0'))
+            .join('');
+        }
+
+            Uint8Array.prototype.tohex = function () {
+            return [...new Uint8Array(this)]
+                .map(x => x.toString(16).padStart(2, '0'))
+            .join('');
+        }
+
+            String.prototype.toUint8Array = function () {
+            return Uint8Array.from(this.match(/.{1, 2}/g).map((byte) => parseInt(byte, 16)));
+        }
+
+            function calculateMove() {
+            const turbo = turboEl.checked || false;
+            const light = lightEl.checked || false;
+
+            const up = bt_up;
+            const down = bt_down;
+            const left = bt_left;
+            const right = bt_right;
+
+            const cmd = new Uint8Array(16);
+
+            cmd[1] = 0x43;
+            cmd[2] = 0x54;
+            cmd[3] = 0x4c;
+            cmd[8] = 1;
+            cmd[9] = 0x50;
+
+            if (up) cmd[4] = 1;
+            if (down) cmd[5] = 1;
+            if (left) cmd[6] = 1;
+            if (right) cmd[7] = 1;
+
+            if (light) cmd[8] = 0;
+            if (turbo) cmd[9] = 0x64;
+
+            // console.log(cmd.tohex());
+            return cmd
+        }
+
+            function handleNotificationsBattary(event) {
+                let value = event.target.value;
+            let decrypt = decryptAES(value.buffer)
+            batteryEl.innerHTML = decrypt[4];
+        }
+
+            setInterval(async function () {
+            if (!bluetooth) return;
+            await sendMessage();
+        }, 100);
+
+            window.addEventListener("keydown", function(event) {
+            switch (event.key) {
+                case "ArrowUp": {
+                bt_up = true;
+            break
+                }
+            case "ArrowDown": {
+                bt_down = true;
+            break;
+                }
+            case "ArrowLeft": {
+                bt_left = true;
+            break
+                }
+            case "ArrowRight": {
+                bt_right = true;
+            break
+                }
+            }
+        });
+
+            window.addEventListener("keyup", function (event) {
+            switch (event.key) {
+                case "ArrowUp": {
+                bt_up = false;
+            break
+                }
+            case "ArrowDown": {
+                bt_down = false;
+            break;
+                }
+            case "ArrowLeft": {
+                bt_left = false;
+            break
+                }
+            case "ArrowRight": {
+                bt_right = false;
+            break
+                }
+            }
+        })
+
+        </script>
+
+    </body>
+</html>
