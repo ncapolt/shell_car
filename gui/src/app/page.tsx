@@ -430,7 +430,7 @@ export default function Home() {
                         <h1 className="text-2xl font-bold mb-4 text-white">{carType === 'bmw' ? 'BMW M Hybrid V8' : 'FERRARI F1-75'}</h1>
                         <div className="flex flex-row gap-10">
                             <h2 className="text-1xl font-bold mb-4 text-white">Shell Car - {connected ? '✅ Connected' : '🔴 Disconnected'}</h2>
-                            <h2 className="text-1xl font-bold mb-4 text-white">Gamepad Controller - {controllerConnected ? '✅ Connected' : '🔴 Disconnected'}</h2>
+                            <h2 className="text-1xl font-bold mb-4 text-white">Gamepad - {controllerConnected ? '✅ Connected' : '🔴 Disconnected'}</h2>
                         </div>
                         {connected && batteryLevel !== null && (
                             <div className="text-white">
