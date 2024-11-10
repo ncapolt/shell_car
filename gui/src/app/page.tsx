@@ -24,19 +24,41 @@ import {
 } from './commands';
 import { Modal } from "./Modal";
 
+type BluetoothRemoteGATTServer = any;
+type BluetoothRemoteGATTCharacteristic = any;
+type BluetoothDevice = any;
+
+type NavigatorBluetooth = Navigator & {
+    bluetooth: any;
+};
+
+
+// Type error: Property 'tohex' does not exist on type 'ArrayBuffer'.
+
+type ArrayBufferExtension = ArrayBuffer & {
+    tohex: () => string;
+};
+type Uint8ArrayExtension = Uint8Array & {
+    tohex: () => string;
+};
+type StringExtension = string & {
+    toUint8Array: () => Uint8Array;
+};
 
 // Helper functions to extend prototypes
-ArrayBuffer.prototype.tohex = function () {
+(ArrayBuffer.prototype as ArrayBufferExtension).tohex = function () {
     return [...new Uint8Array(this)]
         .map(x => x.toString(16).padStart(2, '0'))
         .join('');
 };
-Uint8Array.prototype.tohex = function () {
+
+(Uint8Array.prototype as Uint8ArrayExtension).tohex = function () {
     return [...new Uint8Array(this)]
         .map(x => x.toString(16).padStart(2, '0'))
         .join('');
 };
-String.prototype.toUint8Array = function () {
+
+(String.prototype as StringExtension).toUint8Array = function () {
     if (!this) return new Uint8Array();
     return Uint8Array.from(this.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []);
 };
@@ -91,7 +113,7 @@ export default function Home() {
     const connectButton = async () => {
         try {
             console.log('Requesting any Bluetooth Device...');
-            const device = await navigator.bluetooth.requestDevice({
+            const device = await (navigator as NavigatorBluetooth).bluetooth.requestDevice({
                 filters: [{ namePrefix: "QCAR-" }],
                 optionalServices: [
                     CONTROL_SERVICE_UUID,
@@ -124,7 +146,7 @@ export default function Home() {
     };
 
     const decryptAES = (cipherText: ArrayBuffer) => {
-        const encryptedHex = CryptoJS.enc.Hex.parse(cipherText.tohex());
+        const encryptedHex = CryptoJS.enc.Hex.parse((cipherText as ArrayBufferExtension).tohex());
         const keyHex = CryptoJS.enc.Hex.parse(DECRYPT_KEY);
 
         const decrypted = CryptoJS.AES.decrypt({ ciphertext: encryptedHex }, keyHex, {
@@ -136,7 +158,7 @@ export default function Home() {
     };
 
     const encryptAES = (cipherText: ArrayBuffer) => {
-        const valueHex = CryptoJS.enc.Hex.parse(cipherText.tohex());
+        const valueHex = CryptoJS.enc.Hex.parse((cipherText as ArrayBufferExtension).tohex());
         const keyHex = CryptoJS.enc.Hex.parse(DECRYPT_KEY);
         const encrypted = CryptoJS.AES.encrypt(valueHex, keyHex, {
             mode: CryptoJS.mode.ECB,
@@ -347,7 +369,6 @@ export default function Home() {
             const gamepads = navigator.getGamepads();
             if (isSendingMessage) return;
             if (gamepads[0]) {
-                console.log(gamepads[0]);
                 const gp = gamepads[0];
                 
                 if (!gp.buttons) return;
@@ -366,7 +387,7 @@ export default function Home() {
                     duration: 1,
                 };
 
-                // console.log("idle", isIdle(newcommand), newcommand);
+                console.log("idle", isIdle(newcommand), newcommand);
                 
                 setCommand(newcommand);
                 // if (isIdle(command) && !isIdle(newcommand)) {

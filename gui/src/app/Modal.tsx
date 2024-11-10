@@ -1,6 +1,9 @@
 'use client';
-import { ChangeEvent } from "react";
-import { Command } from "./page";
+// import { ChangeEvent } from "react";
+// import { Command } from "./page";
+
+import type { ChangeEvent } from "react";
+import type { Command } from "./page";
 
 // Modal Component
 type ModalProps = {

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three-stdlib/loaders/GLTFLoader';
+import { OrbitControls } from 'three-stdlib/controls/OrbitControls';
 
 type ThreeJSViewerProps = {
     carType: string;
@@ -9,8 +9,6 @@ type ThreeJSViewerProps = {
 
 const ThreeJSViewer: React.FC<ThreeJSViewerProps> = ({ carType }) => {
     const mountRef = useRef<HTMLDivElement>(null);
-    const [carModel, setCarModel] = React.useState<THREE.Object3D | null>(null);
-    const [directionalLight, setDirectionalLight] = React.useState<THREE.DirectionalLight | null>(null);
 
     useEffect(() => {
         const mount = mountRef.current;
@@ -44,7 +42,7 @@ const ThreeJSViewer: React.FC<ThreeJSViewerProps> = ({ carType }) => {
         const loader = new GLTFLoader();
         const fileName = carType == 'bmw' ? '/bmw-m-hybrid-v8/source/BMW_For_Low_Graphics.glb' :
             '/Ferrari-F1-75/scene.gltf';
-        loader.load(fileName, (gltf: THREE.GLTF) => {
+        loader.load(fileName, (gltf: any) => {
             console.log(gltf)
             // gltf.scene.children[0] is the car
             // setCarModel(gltf.scene.children[0]);
