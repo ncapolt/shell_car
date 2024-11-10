@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body className="w-full h-full overflow-hidden">
+      <body className="w-full h-full overflow-hidden bg-black">
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
