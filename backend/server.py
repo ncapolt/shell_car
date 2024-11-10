@@ -1,18 +1,21 @@
 # pylint: disable=E1126
 # pylint: disable=E0401
+# pylint: disable=F0401
 # pylint: disable=C0413
 # pylint: disable=C0411
 # pylint: disable=C0103
 # pylint: disable=C0301
+# pylint: disable=W0611
 # pylint: disable=W0612
+
 from routines import CarCommand
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from shellcar import ShellCar
-import asyncio
+import asyncio  # noqa: E402
 import threading
 import queue
-import subprocess
+import subprocess  # noqa: E402
 import os
 
 app = Flask(__name__)
