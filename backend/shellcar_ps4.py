@@ -33,6 +33,7 @@ left = False
 right = False
 turbo = False
 connected = False
+lamp_on = False
 switched_to_bburago = False
 
 
@@ -112,12 +113,10 @@ def get_bburago_command(turbo_on, forward_on, backward_on, left_on, right_on, la
 
 
 def on_gamepad_event():
-    global forward, backward, left, right, turbo
+    global forward, backward, left, right, turbo, lamp_on
     pygame.init()
     pygame.joystick.init()
-    print(
-        [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-    )
+    print([pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())])
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
 
@@ -126,40 +125,47 @@ def on_gamepad_event():
             if event.type == pygame.JOYBUTTONDOWN:
                 if event.button == 0:  # X button
                     turbo = True
+                if event.button == 3:  # Triangle button
+                    lamp_on = True
             elif event.type == pygame.JOYBUTTONUP:
                 if event.button == 0:  # X button
                     turbo = False
-            elif event.type == pygame.JOYHATMOTION:
-                if event.value == (1, 0):  # D-pad right
-                    right = True
-                    left = False
-                elif event.value == (-1, 0):  # D-pad left
-                    left = True
-                    right = False
-                elif event.value == (0, 0):  # D-pad released
-                    left = False
-                    right = False
-            elif event.type == pygame.JOYAXISMOTION:
-                if event.axis == 0:  # Left joystick horizontal
-                    if event.value < -0.5:
-                        left = True
-                        right = False
-                    elif event.value > 0.5:
+                if event.button == 3:
+                    lamp_on = False
+            elif (
+                event.type == pygame.JOYHATMOTION or event.type == pygame.JOYAXISMOTION
+            ):
+                if event.type == pygame.JOYHATMOTION:
+                    if event.value == (1, 0):  # D-pad right
                         right = True
                         left = False
-                    else:
+                    elif event.value == (-1, 0):  # D-pad left
+                        left = True
+                        right = False
+                    elif event.value == (0, 0):  # D-pad released
                         left = False
                         right = False
-                if event.axis == 5:
-                    if event.value > -0.5:
-                        forward = True
-                    else:
-                        forward = False
-                if event.axis == 4:
-                    if event.value > -0.5:
-                        backward = True
-                    else:
-                        backward = False
+                if event.type == pygame.JOYAXISMOTION:
+                    if event.axis == 0:  # Left joystick horizontal
+                        if event.value < -0.5:
+                            left = True
+                            right = False
+                        elif event.value > 0.5:
+                            right = True
+                            left = False
+                        else:
+                            left = False
+                            right = False
+                    if event.axis == 5:
+                        if event.value > -0.5:
+                            forward = True
+                        else:
+                            forward = False
+                    if event.axis == 4:
+                        if event.value > -0.5:
+                            backward = True
+                        else:
+                            backward = False
 
 
 # Start the gamepad event listener in a separate thread
