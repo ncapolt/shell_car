@@ -76,7 +76,6 @@ export interface Command {
 export default function Home() {
     const [connected, setConnected] = useState<boolean>(false);
     const [routine, setRoutine] = useState<Command[]>([]);
-    const [carType, setCarType] = useState<string>('bmw');
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
 
@@ -94,6 +93,8 @@ export default function Home() {
 
     const DECRYPT_KEY = "34522a5b7a6e492c08090a9d8d2a23f8";
 
+    const [controllerConnected, setControllerConnected] = useState<boolean>(false);
+
     const [command, setCommand] = useState<Command>({
         forward: false,
         backward: false,
@@ -110,6 +111,20 @@ export default function Home() {
         return !cmd.forward && !cmd.backward && !cmd.left && !cmd.right && !cmd.turbo;
     }
 
+    const [carType, setCarType] = useState<string>('bmw');
+
+    useEffect(() => {
+        const storedCarType = localStorage.getItem('carType');
+        if (storedCarType) {
+            setCarType(storedCarType);
+        }
+    }, []);
+
+    // save carType to localStorage
+    useEffect(() => {
+        localStorage.setItem('carType', carType);
+    }, [carType]);
+
     const connectButton = async () => {
         try {
             console.log('Requesting any Bluetooth Device...');
@@ -125,6 +140,8 @@ export default function Home() {
             await connectDevice(device);
             console.log("Device connected");
             setConnected(true);
+
+            setCommand({ forward: true, backward: false, left: false, right: false, turbo: false, duration: 1 });
         } catch (error) {
             console.error("Error connecting:", error);
         }
@@ -138,6 +155,11 @@ export default function Home() {
             console.error("Error during device connection:", error);
         }
     };
+
+    const disconnectDevice = async () => {
+        if (!bluetooth) return;
+        await bluetooth.disconnect();
+    }
 
     const onDisconnected = () => {
         console.log('> Bluetooth Device disconnected');
@@ -169,11 +191,10 @@ export default function Home() {
 
     const sendMessage = async (reset2IDLE = true) => {
         if (!bluetooth || isSendingMessage) return;
-        if (isIdle(command) && lastCommand && isIdle(lastCommand)) {
-            return;
-        }
-        if (isIdle(command) && lastCommand) {
-            return;
+        if (!lastCommand){
+            if (isIdle(command) && lastCommand && isIdle(lastCommand)) {
+                return;
+            }
         }
         setIsSendingMessage(true);
         try {
@@ -348,10 +369,12 @@ export default function Home() {
 
     useEffect(() => {
         const handleGamepadConnected = (event: GamepadEvent) => {
+            setControllerConnected(true);
             console.log('Gamepad connected:', event.gamepad);
         };
 
         const handleGamepadDisconnected = (event: GamepadEvent) => {
+            setControllerConnected(false);
             console.log('Gamepad disconnected:', event.gamepad);
         };
 
@@ -405,7 +428,10 @@ export default function Home() {
                 <div className="w-screen flex flex-row justify-between items-center px-10">
                     <div className="w-screen flex flex-col justify-between items-center">
                         <h1 className="text-2xl font-bold mb-4 text-white">{carType === 'bmw' ? 'BMW M Hybrid V8' : 'FERRARI F1-75'}</h1>
-                        <h2 className="text-1xl font-bold mb-4 text-white">Shell Car Controller - {connected ? '✅ Connected' : '🔴 Disconnected'}</h2>
+                        <div className="flex flex-row gap-10">
+                            <h2 className="text-1xl font-bold mb-4 text-white">Shell Car - {connected ? '✅ Connected' : '🔴 Disconnected'}</h2>
+                            <h2 className="text-1xl font-bold mb-4 text-white">Gamepad Controller - {controllerConnected ? '✅ Connected' : '🔴 Disconnected'}</h2>
+                        </div>
                         {connected && batteryLevel !== null && (
                             <div className="text-white">
                                 Battery Level: <span ref={batteryEl}>{batteryLevel}%</span>
@@ -422,7 +448,11 @@ export default function Home() {
                 justify-between 
                 flex flex-row items-center space-x-4 mb-16"
             >
-                <button onClick={connectButton} className="hover:bg-blue-400 bg-blue-500 text-white px-4 py-2 rounded">Connect</button>
+                { !connected ? (
+                    <button onClick={connectButton} className="hover:bg-blue-400 bg-blue-500 text-white px-4 py-2 rounded">Connect</button>
+                ) : (
+                    <button onClick={disconnectDevice} className="hover:bg-red-400 bg-red-500 text-white px-4 py-2 rounded">Disconnect</button>
+                )}
                 { connected && (
                     <div className="flex space-x-4">
                         <button onClick={() => setIsModalOpen(true)} className="hover:bg-yellow-400 bg-yellow-500 text-white px-4 py-2 rounded">Add Command</button>
