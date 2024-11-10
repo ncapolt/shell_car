@@ -423,62 +423,124 @@ export default function Home() {
     }, [isSendingMessage]);
 
     return (
-        <div className="w-screen h-screen flex flex-col justify-center items-center bg-cover bg-center" style={{ backgroundImage: `url(background_${carType}.png)` }}>
-            <div className="w-screen h-screen p-4 pt-36">
-                <div className="w-screen flex flex-row justify-between items-center px-10">
-                    <div className="w-screen flex flex-col justify-between items-center">
-                        <h1 className="text-2xl font-bold mb-4 text-white">{carType === 'bmw' ? 'BMW M Hybrid V8' : 'FERRARI F1-75'}</h1>
-                        <div className="flex flex-row gap-10">
-                            <h2 className="text-1xl font-bold mb-4 text-white">Shell Car - {connected ? '✅ Connected' : '🔴 Disconnected'}</h2>
-                            <h2 className="text-1xl font-bold mb-4 text-white">Gamepad - {controllerConnected ? '✅ Connected' : '🔴 Disconnected'}</h2>
-                        </div>
-                        {connected && batteryLevel !== null && (
-                            <div className="text-white">
-                                Battery Level: <span ref={batteryEl}>{batteryLevel}%</span>
+        <>
+            <style>
+                {`
+                @keyframes fadeInFromCenter {
+                    0% {
+                        opacity: 0;
+                        blur: 10px;
+                        filter: blur(5px);
+                        transform: scale(0.5);
+                        box-shadow: 0 0 10px 10px #000;
+                        border-radius: 100% 100% 100% 100%;
+                    }
+                    100% {
+                        opacity: 1;
+                        blur: 0;
+                        filter: blur(0);
+                        transform: scale(1);
+                        box-shadow: unset;
+                        border-radius: 0% 0% 0% 0%;
+                    }
+                }
+                .background-animation {
+                    animation: fadeInFromCenter 2s ease-in-out;
+                }
+                
+                @keyframes appearLater {
+                    0% {
+                        opacity: 0;
+                    }
+                    80% {
+                        opacity: 0;
+                    }
+
+                    100% {
+                        opacity: 1;
+                    }
+                }
+
+                .ui {
+                    animation: appearLater 2s ease-out;
+                }
+
+                @progressiveDeblur {
+                    0% {
+                        backdrop-filter: blur(10px);
+                    }
+                    100% {
+                        backdrop-filter: blur(0);
+                    }
+                }
+                .overlayed-blur{
+                    animation: progressiveDeblur 2s ease-out;
+                }
+                `}
+            </style>
+            {/* <div className="w-screen h-screen flex flex-col justify-center items-center bg-cover bg-center background-animation" style={{ backgroundImage: `url(background_${carType}.png)` }}> */}
+            <div className="fixed z-0
+            w-screen h-screen flex flex-col justify-center items-center bg-cover bg-center background-animation" style={{ backgroundImage: `url(/background_${carType}.png)` }}>
+            </div>
+            <div className="fixed z-1 w-screen h-screen overlayed-blur"></div>
+            <div className="w-screen h-screen ui flex flex-col justify-center items-center z-10">
+                
+                <div className="absolute w-screen h-screen p-4 pt-36">
+                    <div className="w-screen flex flex-row justify-between items-center px-10">
+                        <div className="w-screen flex flex-col justify-between items-center">
+                            <h1 className="text-2xl font-bold mb-4 text-white">{carType === 'bmw' ? 'BMW M Hybrid V8' : 'FERRARI F1-75'}</h1>
+                            <div className="flex flex-row gap-10">
+                                <h2 className="text-1xl font-bold mb-4 text-white">Shell Car - {connected ? '✅ Connected' : '🔴 Disconnected'}</h2>
+                                <h2 className="text-1xl font-bold mb-4 text-white">Gamepad - {controllerConnected ? '✅ Connected' : '🔴 Disconnected'}</h2>
                             </div>
-                        )}
+                            {connected && batteryLevel !== null && (
+                                <div className="text-white">
+                                    Battery Level: <span ref={batteryEl}>{batteryLevel}%</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {/* <ThreeJSViewer carType={carType} /> */}
+                </div>
+
+                <div className="
+                    w-1/2
+                    absolute bottom-0 p-4 
+                    justify-between 
+                    flex flex-row items-center space-x-4 mb-16"
+                >
+                    { !connected ? (
+                        <button onClick={connectButton} className="hover:bg-blue-400 bg-blue-500 text-white px-4 py-2 rounded">Connect</button>
+                    ) : (
+                        <button onClick={disconnectDevice} className="hover:bg-red-400 bg-red-500 text-white px-4 py-2 rounded">Disconnect</button>
+                    )}
+                    { connected && (
+                        <div className="flex space-x-4">
+                            <button onClick={() => setIsModalOpen(true)} className="hover:bg-yellow-400 bg-yellow-500 text-white px-4 py-2 rounded">Add Command</button>
+                            <button onClick={sendRoutine} className="hover:bg-green-400 bg-green-500 text-white px-4 py-2 rounded">Send Routine</button>
+                        </div>
+                    )}
+                    {/* BMW/Ferrari Toggle */}
+                    <div className="flex justify-center">
+                        <div className="inline-flex rounded-md shadow-sm" role="group">
+                            <button onClick={() => setCarType('bmw')} className={`hover:bg-blue-500 px-4 py-2 rounded-l-md ${carType === 'bmw' ? 'bg-blue-700 text-white' : 'bg-blue-950 text-white'}`}>
+                                {/* BMW */}
+                                <Image src={bmwLogo} alt="BMW Logo" width={25} height={25} />
+                            </button>
+                            <button onClick={() => setCarType('ferrari')} className={`hover:bg-red-500 px-4 py-2 rounded-r-md ${carType === 'ferrari' ? 'bg-red-700 text-white' : 'bg-red-950 text-white'}`}>
+                                {/* Ferrari */}
+                                <Image src={ferrariLogo} alt="Ferrari Logo" width={25} height={25} />
+                            </button>
+                        </div>
                     </div>
                 </div>
-                {/* <ThreeJSViewer carType={carType} /> */}
-            </div>
 
-            <div className="
-                w-1/2
-                absolute bottom-0 p-4 
-                justify-between 
-                flex flex-row items-center space-x-4 mb-16"
-            >
-                { !connected ? (
-                    <button onClick={connectButton} className="hover:bg-blue-400 bg-blue-500 text-white px-4 py-2 rounded">Connect</button>
-                ) : (
-                    <button onClick={disconnectDevice} className="hover:bg-red-400 bg-red-500 text-white px-4 py-2 rounded">Disconnect</button>
+                {/* Modal */}
+                {isModalOpen && (
+                    // Modal(routine, updateCommand, moveCommand, removeCommand, setIsModalOpen, addCommand)
+                    <Modal routine={routine} updateCommand={updateCommand} moveCommand={moveCommand} removeCommand={removeCommand} setIsModalOpen={setIsModalOpen} addCommand={addCommand} />
                 )}
-                { connected && (
-                    <div className="flex space-x-4">
-                        <button onClick={() => setIsModalOpen(true)} className="hover:bg-yellow-400 bg-yellow-500 text-white px-4 py-2 rounded">Add Command</button>
-                        <button onClick={sendRoutine} className="hover:bg-green-400 bg-green-500 text-white px-4 py-2 rounded">Send Routine</button>
-                    </div>
-                )}
-                {/* BMW/Ferrari Toggle */}
-                <div className="flex justify-center">
-                    <div className="inline-flex rounded-md shadow-sm" role="group">
-                        <button onClick={() => setCarType('bmw')} className={`hover:bg-blue-500 px-4 py-2 rounded-l-md ${carType === 'bmw' ? 'bg-blue-700 text-white' : 'bg-blue-950 text-white'}`}>
-                            {/* BMW */}
-                            <Image src={bmwLogo} alt="BMW Logo" width={25} height={25} />
-                        </button>
-                        <button onClick={() => setCarType('ferrari')} className={`hover:bg-red-500 px-4 py-2 rounded-r-md ${carType === 'ferrari' ? 'bg-red-700 text-white' : 'bg-red-950 text-white'}`}>
-                            {/* Ferrari */}
-                            <Image src={ferrariLogo} alt="Ferrari Logo" width={25} height={25} />
-                        </button>
-                    </div>
-                </div>
             </div>
-
-            {/* Modal */}
-            {isModalOpen && (
-                // Modal(routine, updateCommand, moveCommand, removeCommand, setIsModalOpen, addCommand)
-                <Modal routine={routine} updateCommand={updateCommand} moveCommand={moveCommand} removeCommand={removeCommand} setIsModalOpen={setIsModalOpen} addCommand={addCommand} />
-            )}
-        </div>
+        </>
     );
 }
